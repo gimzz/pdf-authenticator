@@ -27,8 +27,8 @@ export class SignatureService {
     this.publicKey = fs.readFileSync(path.join(keysPath, 'public.key'), 'utf8');
   }
 
-  generateHash(pdfBuffer: Buffer): string {
-    return crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+  generateHash(fileBuffer: Buffer): string {
+    return crypto.createHash('sha256').update(fileBuffer).digest('hex');
   }
 
   private encryptAES(text: string, unsafe = false): string {
@@ -52,26 +52,43 @@ export class SignatureService {
     ]).toString();
   }
 
-  async signFile(pdfBuffer: Buffer, unsafeAES = false) {
-    const hash = this.generateHash(pdfBuffer);
-    const signature = crypto.sign('sha256', Buffer.from(hash, 'hex'), {
-      key: this.privateKey,
-      padding: crypto.constants.RSA_PKCS1_PADDING,
-    });
-    const encryptedSignature = this.encryptAES(
-      signature.toString('base64'),
-      unsafeAES,
-    );
-    await this.prisma.singFile.create({
-      data: {
-        hash,
-        signature: encryptedSignature,
-      },
-    });
+async signFile(fileBuffer: Buffer, unsafeAES = false) {
+  const hash = this.generateHash(fileBuffer);
+
+  const exists = await this.prisma.singFile.findUnique({
+    where: { hash },
+  });
+
+  if (exists) {
     return {
-      message: 'El archivo se ha firmado correctamente',
+      message: 'El archivo ya fue firmado previamente',
+      alreadySigned: true,
     };
   }
+
+  const signature = crypto.sign('sha256', Buffer.from(hash, 'hex'), {
+    key: this.privateKey,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
+  });
+
+  const encryptedSignature = this.encryptAES(
+    signature.toString('base64'),
+    unsafeAES,
+  );
+
+  await this.prisma.singFile.create({
+    data: {
+      hash,
+      signature: encryptedSignature,
+    },
+  });
+
+  return {
+    message: 'El archivo se ha firmado correctamente',
+    alreadySigned: false,
+  };
+}
+
 
   async verifyFile(fileBuffer: Buffer, unsafeAES = false) {
     const currentHash = this.generateHash(fileBuffer);
