@@ -1,215 +1,137 @@
-# 📄 File Authenticator API
+Entiendo perfectamente. El texto anterior tenía mezclados comandos de NestJS con las instrucciones reales del proyecto. He limpiado todo el "ruido", los enlaces externos y las secciones que no querías.
 
-API para **firmar y verificar documentos** usando criptografía (RSA + SHA-256) y almacenamiento de firmas en **SQLite con Prisma**. Soporta firma y verificación tanto por **archivo** como por **Base64**.
+Aquí tienes el código limpio del `README.md` listo para copiar y pegar:
 
 ---
 
-## 🚀 Características
+# 📄 File Authenticator API
 
-* Firma digital de Archvos
-* Verificación de integridad y autenticidad
-* Soporte para:
-
-  * Subida de archivos (`multipart/form-data`)
-  * Archivos en Base64 (`application/json`)
-* Cifrado AES para proteger la firma
-* Persistencia con **SQLite + Prisma**
-* API construida con **NestJS**
+API para **firmar y verificar documentos** usando criptografía (RSA + SHA-256) y almacenamiento de firmas en **SQLite con Prisma**. Soporta procesamiento de archivos físicos y cadenas en formato **Base64**.
 
 ---
 
 ## 🧱 Tecnologías
 
-* Node.js (>= 18)
-* NestJS
-* Crypto (RSA + AES + SHA-256)
-* Prisma ORM
-* SQLite
-* Multer
+* **Framework:** NestJS (Node.js >= 18)
+* **Criptografía:** Crypto (RSA + AES + SHA-256)
+* **Base de Datos:** SQLite + Prisma ORM
+* **Gestión de Archivos:** Multer
 
 ---
 
-## 📦 Requisitos
+## ⚙️ Configuración e Instalación
 
-Antes de empezar asegúrate de tener instalado:
-
-* Node.js >= 18
-* npm o yarn
-* Git
-
----
-
-## 📥 Clonar el repositorio
+### 1. Clonar e Instalar
 
 ```bash
 git clone https://github.com/gimzz/file-authenticator.git
 cd file-authenticator
-```
-
----
-
-## 📦 Instalar dependencias
-
-```bash
 npm install
+
 ```
 
----
+### 2. Variables de Entorno
 
-## 🔐 Variables de entorno
-
-Crea un archivo `.env` en la raíz del proyecto:
+Crea un archivo llamado `.env` en la raíz del proyecto y agrega lo siguiente:
 
 ```env
-SECRET_KEY=una_clave_super_secreta_y_larga_123456
+SECRET_KEY=una_clave_para_aes_de_32_caracteres_minimo
 DATABASE_URL="file:./prisma/sing.db"
+
 ```
 
-📌 **Notas importantes**:
+### 3. Generar Llaves RSA (Firmado)
 
-* `SECRET_KEY` se usa para AES (mínimo recomendado: 32 caracteres)
-* SQLite se crea automáticamente
-
----
-
-## 🔑 Llaves RSA
-
-Crea una carpeta `keys/` en la raíz:
+Crea una carpeta llamada `keys/` en la raíz y genera el par de llaves:
 
 ```bash
 mkdir keys
-```
-
-Genera las llaves:
-
-```bash
 openssl genrsa -out keys/private.key 2048
 openssl rsa -in keys/private.key -pubout -out keys/public.key
+
 ```
 
----
+### 4. Inicializar Base de Datos
 
-## 🗄️ Base de datos (Prisma)
-
-Generar cliente Prisma:
+Ejecuta estos comandos para configurar Prisma y SQLite:
 
 ```bash
 npm run db:generate
-```
-
-Crear la base de datos:
-
-```bash
 npm run db:push
+
 ```
 
 ---
 
-## ▶️ Ejecutar el proyecto
-
-Modo desarrollo:
+## ▶️ Ejecución
 
 ```bash
+# Modo desarrollo
 npm run start:dev
-```
 
-La API quedará disponible en:
 
-```
-http://localhost:3000
-```
+
+La API estará disponible en: `http://localhost:3000`
 
 ---
 
-## 🔐 Endpoints principales
+## 🔐 Endpoints Principales
 
-### 📌 Firmar Archivos
+### 📌 Firmar Archivo (File)
 
-```http
-POST /signature/sign/file
-Content-Type: multipart/form-data
-```
-
-**Body**:
-
-* `file`: PDF | JPG | PNG | DOC| XLS | PPT | TXT | ZIP | RAR | CBR | EPUB.
-
----
+* **Endpoint:** `POST /signature/sign/file`
+* **Content-Type:** `multipart/form-data`
+* **Body:** `file` (Cualquier archivo: PDF, JPG, PNG, etc.)
 
 ### 📌 Firmar Archivo (Base64)
 
-```http
-POST /signature/sign/base64
-Content-Type: application/json
-```
-
+* **Endpoint:** `POST /signature/sign/base64`
+* **Content-Type:** `application/json`
+* **Body:**
 ```json
 {
   "pdfBase64": "JVBERi0xLjQKJ..."
 }
+
 ```
 
----
 
-### 📌 Verificar Archivo
 
-```http
-POST /signature/verify
-Content-Type: multipart/form-data
-```
+### 📌 Verificar Archivo (File)
 
-**Body**:
-
-* `file`: Archivo a verificar
-
----
+* **Endpoint:** `POST /signature/verify`
+* **Content-Type:** `multipart/form-data`
+* **Body:** `file` (El archivo que deseas validar)
 
 ### 📌 Verificar Archivo (Base64)
 
-```http
-POST /signature/verify
-Content-Type: application/json
-```
-
+* **Endpoint:** `POST /signature/verify`
+* **Content-Type:** `application/json`
+* **Body:**
 ```json
 {
   "pdfBase64": "JVBERi0xLjQKJ..."
 }
+
 ```
 
-📌 Este endpoint permite verificar documentos sin enviar archivos físicos.
+
 
 ---
 
-## ✅ Flujo de verificación
+## 🛠️ ¿Cómo funciona?
 
-1. Se calcula el hash del Archivo
-2. Se busca la firma asociada en la base de datos
-3. Se descifra la firma
-4. Se valida con la clave pública
-5. Si el archivo fue modificado → ❌ inválido
+1. **Hasing:** Se obtiene el hash **SHA-256** único del contenido del archivo.
+2. **Firma:** Ese hash se firma con la **Llave Privada** del servidor.
+3. **Cifrado:** La firma se cifra con **AES** (usando la `SECRET_KEY`) y se guarda en la base de datos junto al hash.
+4. **Verificación:** Al recibir un archivo, se busca su hash en la DB, se descifra la firma y se comprueba con la **Llave Pública**. Si el archivo fue alterado, la verificación será negativa.
 
 ---
-
-## 🧪 Seguridad
-
-* Cualquier cambio en el Archivo invalida la firma
-* La verificación siempre depende del hash
-
 
 ## 👨‍💻 Autor
 
 Desarrollado por **Gimzz**
+✨ Proyecto educativo y demostrativo de firmas digitales.
+Esto es una version **demo** de un proyecto **comercial**. 
 
 ---
-
-## 📌 Próximas mejoras
-
-* Inserción de QR en el Archivo
-* Endpoint público de verificación
-* Auditoría de firmas
-* Dockerización
-
----
-
-✨ Proyecto educativo y demostrativo de firmas digitales en Archivos.
