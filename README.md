@@ -1,6 +1,4 @@
-Entiendo perfectamente. El texto anterior tenía mezclados comandos de NestJS con las instrucciones reales del proyecto. He limpiado todo el "ruido", los enlaces externos y las secciones que no querías.
 
-Aquí tienes el código limpio del `README.md` listo para copiar y pegar:
 
 ---
 
